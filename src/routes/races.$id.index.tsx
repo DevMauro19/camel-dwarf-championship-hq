@@ -89,6 +89,15 @@ function RaceDetail() {
             <Button size="sm" onClick={() => setRegisterOpen(true)}>
               <UserPlus className="size-4" /> Register competitor
             </Button>
+          ) : canManage && race.status !== "COMPLETED" && race.status !== "CANCELLED" ? (
+            <Button
+              size="sm"
+              variant="outline"
+              disabled
+              title="Open registration first to add competitors"
+            >
+              <UserPlus className="size-4" /> Register competitor
+            </Button>
           ) : null}
           {canManage ? (
             <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>

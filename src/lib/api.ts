@@ -171,6 +171,9 @@ export const api = {
     get: (id: number) => apiRequest(`/races/${id}`),
     create: (body: unknown) => apiRequest("/races", { method: "POST", body }),
     update: (id: number, body: unknown) => apiRequest(`/races/${id}`, { method: "PUT", body }),
+    /** Moves a race through its lifecycle (DRAFT → OPEN_FOR_REGISTRATION → …). */
+    setStatus: (id: number, status: string) =>
+      apiRequest(`/races/${id}/status`, { method: "PATCH", body: { status } }),
   },
   registrations: {
     list: () => apiRequest(`/registrations${PAGE_QUERY}`),
