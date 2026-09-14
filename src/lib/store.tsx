@@ -30,7 +30,7 @@ interface StoreValue extends StoreState {
   saveCompetitor: (input: Omit<Competitor, "id"> & { id?: number }) => void;
   deactivateCompetitor: (id: number) => void;
   saveTeam: (input: Omit<Team, "id" | "memberIds"> & { id?: number }) => void;
-  addMember: (teamId: number, competitorId: number) => void;
+  addMember: (teamId: number, competitorId: number) => Promise<boolean>;
   removeMember: (teamId: number, competitorId: number) => void;
   saveRace: (input: Omit<Race, "id"> & { id?: number }) => Promise<boolean>;
   setRaceStatus: (id: number, status: Race["status"]) => void;
@@ -217,8 +217,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           newValue: input.name,
         });
       },
-      addMember: (teamId, competitorId) => {
-        persist(() => api.teams.addCompetitor(teamId, competitorId));
+      addMember: async (teamId, competitorId) => {
+        const saved = await persist(() => api.teams.addCompetitor(teamId, competitorId));
+        if (!saved) return false;
+
         setState((prev) => ({
           ...prev,
           teams: prev.teams.map((t) =>
@@ -235,6 +237,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           entityType: "Team",
           description: `Added competitor #${competitorId} to team #${teamId}`,
         });
+        return true;
       },
       removeMember: (teamId, competitorId) => {
         persist(() => api.teams.removeCompetitor(teamId, competitorId));

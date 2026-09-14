@@ -53,7 +53,10 @@ function TeamDetail() {
 
   const members = competitors.filter((c) => team.memberIds.includes(c.id));
   const available = competitors.filter(
-    (c) => !team.memberIds.includes(c.id) && c.status !== "RETIRED",
+    (c) =>
+      !team.memberIds.includes(c.id) &&
+      c.status !== "RETIRED" &&
+      (c.teamId == null || c.teamId === team.id),
   );
 
   return (
@@ -107,9 +110,11 @@ function TeamDetail() {
                         toast.error("Pick a competitor to add first.");
                         return;
                       }
-                      addMember(team.id, Number(pick));
-                      setPick("");
-                      toast.success("Member added to the team.");
+                      void addMember(team.id, Number(pick)).then((saved) => {
+                        if (!saved) return;
+                        setPick("");
+                        toast.success("Member added to the team.");
+                      });
                     }}
                   >
                     <Plus className="size-4" /> Add
