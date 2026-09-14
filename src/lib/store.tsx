@@ -292,6 +292,35 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           newValue: status,
         });
       },
+      registerCompetitor: (raceId, competitorId) => {
+        persist(() => api.registrations.create({ raceId, competitorId }));
+        setState((prev) => {
+          const exists = prev.registrations.some(
+            (r) => r.raceId === raceId && r.competitorId === competitorId && r.status !== "REJECTED",
+          );
+          if (exists) return prev;
+          return {
+            ...prev,
+            registrations: [
+              ...prev.registrations,
+              {
+                id: nextId(prev.registrations),
+                raceId,
+                competitorId,
+                status: "PENDING",
+                submittedAt: new Date().toISOString(),
+              },
+            ],
+          };
+        });
+        log({
+          action: "CREATE_REGISTRATION",
+          entityType: "Registration",
+          description: `Registered competitor #${competitorId} for race #${raceId}`,
+          newValue: "PENDING",
+        });
+        toast.success("Competitor registered for race.");
+      },
       approveRegistration: (id) => {
         setState((prev) => ({
           ...prev,
