@@ -72,6 +72,9 @@ function RaceDetail() {
   const approved = registrations.filter((r) => r.raceId === race.id && r.status === "APPROVED");
   const pending = registrations.filter((r) => r.raceId === race.id && r.status === "PENDING");
   const raceResults = results.filter((r) => r.raceId === race.id);
+  const canAddCompetitor =
+    race.status === "OPEN_FOR_REGISTRATION" ||
+    (canManage && race.status !== "COMPLETED" && race.status !== "CANCELLED");
   const registeredIds = registrations
     .filter((r) => r.raceId === race.id && r.status !== "REJECTED")
     .map((r) => r.competitorId);
@@ -85,17 +88,8 @@ function RaceDetail() {
       subtitle={`${labelize(race.type)} race · ${approved.length}/${race.maxParticipants} confirmed`}
       actions={
         <div className="flex gap-2">
-          {race.status === "OPEN_FOR_REGISTRATION" ? (
+          {canAddCompetitor ? (
             <Button size="sm" onClick={() => setRegisterOpen(true)}>
-              <UserPlus className="size-4" /> Register competitor
-            </Button>
-          ) : canManage && race.status !== "COMPLETED" && race.status !== "CANCELLED" ? (
-            <Button
-              size="sm"
-              variant="outline"
-              disabled
-              title="Open registration first to add competitors"
-            >
               <UserPlus className="size-4" /> Register competitor
             </Button>
           ) : null}
@@ -158,9 +152,6 @@ function RaceDetail() {
                       className="flex flex-wrap items-center gap-3 rounded-lg border border-border p-3"
                     >
                       <span className="font-medium">{competitor?.name ?? "Unknown competitor"}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {competitor ? labelize(competitor.type) : ""}
-                      </span>
                       {result ? (
                         <span className="ml-auto flex items-center gap-2 text-sm">
                           {result.position ? (

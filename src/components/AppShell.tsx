@@ -15,12 +15,11 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/Spinner";
 import { AccessDenied } from "@/components/AccessDenied";
 import { useAuth } from "@/lib/auth";
-import { labelize, type Role } from "@/lib/types";
+import type { Role } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const NAV: { to: string; label: string; icon: typeof Flag; roles: Role[] }[] = [
@@ -154,12 +153,7 @@ export function AppShell({
               <div className="flex size-8 items-center justify-center rounded-full bg-secondary text-xs font-bold text-secondary-foreground">
                 {user.displayName.slice(0, 2).toUpperCase()}
               </div>
-              <div className="leading-tight">
-                <p className="text-xs font-semibold">{user.displayName}</p>
-                <Badge variant="outline" className="mt-0.5 h-4 rounded-full px-1.5 text-[10px]">
-                  {labelize(user.role)}
-                </Badge>
-              </div>
+              <p className="max-w-44 truncate text-xs font-semibold">{user.username}</p>
             </div>
             <Button variant="outline" size="sm" onClick={logout}>
               <LogOut className="size-4" />
