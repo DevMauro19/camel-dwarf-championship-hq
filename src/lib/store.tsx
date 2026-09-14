@@ -284,6 +284,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           description: `${input.id ? "Updated" : "Created"} race ${input.name}`,
           newValue: input.status,
         });
+        return saved;
       },
       setRaceStatus: (id, status) => {
         const previous = state.races.find((r) => r.id === id)?.status;
