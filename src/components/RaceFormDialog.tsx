@@ -103,7 +103,9 @@ export function RaceFormDialog({
     );
   }, [open, race]);
 
-  function submit(event: React.FormEvent) {
+  const [saving, setSaving] = useState(false);
+
+  async function submit(event: React.FormEvent) {
     event.preventDefault();
     const parsed = schema.safeParse({
       ...form,
@@ -122,15 +124,21 @@ export function RaceFormDialog({
       toast.error("The race date must be in the future.");
       return;
     }
-    saveRace({
-      ...parsed.data,
-      // The server expects local date-times without a timezone suffix.
-      scheduledAt: toServerDateTime(parsed.data.scheduledAt),
-      registrationDeadline: toServerDateTime(parsed.data.registrationDeadline),
-      ...(race ? { id: race.id } : {}),
-    });
-    toast.success(race ? "Race updated." : "Race created.");
-    onOpenChange(false);
+    setSaving(true);
+    try {
+      const ok = await saveRace({
+        ...parsed.data,
+        // The server expects local date-times without a timezone suffix.
+        scheduledAt: toServerDateTime(parsed.data.scheduledAt),
+        registrationDeadline: toServerDateTime(parsed.data.registrationDeadline),
+        ...(race ? { id: race.id } : {}),
+      });
+      if (!ok) return; // the store already showed the server's error
+      toast.success(race ? "Race updated." : "Race created.");
+      onOpenChange(false);
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -258,7 +266,9 @@ export function RaceFormDialog({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit">{race ? "Save changes" : "Create race"}</Button>
+            <Button type="submit" disabled={saving}>
+              {saving ? "Saving…" : race ? "Save changes" : "Create race"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

@@ -32,7 +32,7 @@ interface StoreValue extends StoreState {
   saveTeam: (input: Omit<Team, "id" | "memberIds"> & { id?: number }) => void;
   addMember: (teamId: number, competitorId: number) => void;
   removeMember: (teamId: number, competitorId: number) => void;
-  saveRace: (input: Omit<Race, "id"> & { id?: number }) => void;
+  saveRace: (input: Omit<Race, "id"> & { id?: number }) => Promise<boolean>;
   setRaceStatus: (id: number, status: Race["status"]) => void;
   registerCompetitor: (raceId: number, competitorId: number) => void;
   approveRegistration: (id: number) => void;
@@ -102,11 +102,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<StoreValue>(() => {
     /** Best-effort write-through to the racing server; failures surface as a toast. */
-    const persist = (action: () => Promise<unknown>) => {
-      if (!live) return;
-      void action()
-        .then(() => refresh())
-        .catch((error) => toast.error(friendlyMessage(error)));
+    const persist = (action: () => Promise<unknown>): Promise<boolean> => {
+      if (!live) return Promise.resolve(true);
+      return action()
+        .then(() => {
+          void refresh();
+          return true;
+        })
+        .catch((error) => {
+          toast.error(friendlyMessage(error));
+          // Roll back the optimistic change by re-syncing from the server.
+          void refresh();
+          return false;
+        });
     };
 
     return {
@@ -246,7 +254,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         });
       },
       saveRace: (input) => {
-        persist(() => {
+        const saved = persist(() => {
           // The backend stores LocalDateTime: no milliseconds, no timezone suffix.
           const local = (iso: string) => iso.replace(/(\.\d+)?(Z|[+-]\d{2}:?\d{2})?$/, "");
           const body = {
@@ -278,6 +286,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           description: `${input.id ? "Updated" : "Created"} race ${input.name}`,
           newValue: input.status,
         });
+        return saved;
       },
       setRaceStatus: (id, status) => {
         const previous = state.races.find((r) => r.id === id)?.status;
