@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
-import { ArrowLeft, CalendarClock, ClipboardCheck, Flag, MapPin, Ruler, Trophy, UserPlus } from "lucide-react";
+import { ArrowLeft, CalendarClock, ClipboardCheck, Flag, MapPin, Plus, Ruler, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { EmptyState } from "@/components/Spinner";
@@ -8,14 +8,6 @@ import { RaceFormDialog } from "@/components/RaceFormDialog";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -57,7 +49,6 @@ function RaceDetail() {
   const { canManage } = useAuth();
   const { races, registrations, competitors, results, setRaceStatus, registerCompetitor } = useStore();
   const [editOpen, setEditOpen] = useState(false);
-  const [registerOpen, setRegisterOpen] = useState(false);
   const [pick, setPick] = useState("");
   const race = races.find((r) => r.id === Number(id));
 
@@ -73,8 +64,7 @@ function RaceDetail() {
   const pending = registrations.filter((r) => r.raceId === race.id && r.status === "PENDING");
   const raceResults = results.filter((r) => r.raceId === race.id);
   const canAddCompetitor =
-    race.status === "OPEN_FOR_REGISTRATION" ||
-    (canManage && race.status !== "COMPLETED" && race.status !== "CANCELLED");
+    canManage && race.status !== "COMPLETED" && race.status !== "CANCELLED";
   const registeredIds = registrations
     .filter((r) => r.raceId === race.id && r.status !== "REJECTED")
     .map((r) => r.competitorId);
@@ -88,11 +78,6 @@ function RaceDetail() {
       subtitle={`${labelize(race.type)} race · ${approved.length}/${race.maxParticipants} confirmed`}
       actions={
         <div className="flex gap-2">
-          {canAddCompetitor ? (
-            <Button size="sm" onClick={() => setRegisterOpen(true)}>
-              <UserPlus className="size-4" /> Register competitor
-            </Button>
-          ) : null}
           {canManage ? (
             <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
               Edit race
@@ -136,8 +121,42 @@ function RaceDetail() {
           </Card>
 
           <Card className="shadow-card lg:col-span-2">
-            <CardHeader>
+            <CardHeader className="flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
               <CardTitle className="text-base">Participants ({approved.length})</CardTitle>
+              {canAddCompetitor ? (
+                <div className="flex gap-2">
+                  <Select value={pick} onValueChange={setPick}>
+                    <SelectTrigger className="w-52">
+                      <SelectValue placeholder="Add a competitor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {eligible.map((competitor) => (
+                        <SelectItem key={competitor.id} value={String(competitor.id)}>
+                          {competitor.name} · {labelize(competitor.type)}
+                        </SelectItem>
+                      ))}
+                      {eligible.length === 0 ? (
+                        <SelectItem value="none" disabled>
+                          No eligible competitors
+                        </SelectItem>
+                      ) : null}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    onClick={() => {
+                      if (!pick || pick === "none") {
+                        toast.error("Pick a competitor to add first.");
+                        return;
+                      }
+                      registerCompetitor(race.id, Number(pick));
+                      setPick("");
+                      toast.success("Competitor added to the race.");
+                    }}
+                  >
+                    <Plus className="size-4" /> Add
+                  </Button>
+                </div>
+              ) : null}
             </CardHeader>
             <CardContent className="space-y-3">
               {approved.length === 0 ? (
@@ -200,53 +219,6 @@ function RaceDetail() {
       </div>
 
       <RaceFormDialog open={editOpen} onOpenChange={setEditOpen} race={race} />
-
-      <Dialog open={registerOpen} onOpenChange={setRegisterOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Register competitor</DialogTitle>
-            <DialogDescription>
-              Pick an active competitor to enter {race.name}. The registration starts as pending
-              until an organizer approves it.
-            </DialogDescription>
-          </DialogHeader>
-          <Select value={pick} onValueChange={setPick}>
-            <SelectTrigger>
-              <SelectValue placeholder="Choose a competitor" />
-            </SelectTrigger>
-            <SelectContent>
-              {eligible.map((c) => (
-                <SelectItem key={c.id} value={String(c.id)}>
-                  {c.name} · {labelize(c.type)}
-                </SelectItem>
-              ))}
-              {eligible.length === 0 ? (
-                <SelectItem value="none" disabled>
-                  No eligible competitors
-                </SelectItem>
-              ) : null}
-            </SelectContent>
-          </Select>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setRegisterOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={() => {
-                if (!pick || pick === "none") {
-                  toast.error("Pick a competitor first.");
-                  return;
-                }
-                registerCompetitor(race.id, Number(pick));
-                setPick("");
-                setRegisterOpen(false);
-              }}
-            >
-              Register
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </AppShell>
   );
 }
