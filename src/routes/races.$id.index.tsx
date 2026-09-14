@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
-import { ArrowLeft, CalendarClock, ClipboardCheck, Flag, MapPin, Ruler, Trophy } from "lucide-react";
+import { ArrowLeft, CalendarClock, ClipboardCheck, Flag, MapPin, Ruler, Trophy, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { EmptyState } from "@/components/Spinner";
@@ -8,6 +8,21 @@ import { RaceFormDialog } from "@/components/RaceFormDialog";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuth } from "@/lib/auth";
 import { useStore } from "@/lib/store";
 import { labelize, type RaceStatus } from "@/lib/types";
@@ -40,8 +55,10 @@ const TRANSITIONS: { label: string; status: RaceStatus; from: RaceStatus[] }[] =
 function RaceDetail() {
   const { id } = useParams({ from: "/races/$id/" });
   const { canManage } = useAuth();
-  const { races, registrations, competitors, results, setRaceStatus } = useStore();
+  const { races, registrations, competitors, results, setRaceStatus, registerCompetitor } = useStore();
   const [editOpen, setEditOpen] = useState(false);
+  const [registerOpen, setRegisterOpen] = useState(false);
+  const [pick, setPick] = useState("");
   const race = races.find((r) => r.id === Number(id));
 
   if (!race) {
@@ -55,17 +72,30 @@ function RaceDetail() {
   const approved = registrations.filter((r) => r.raceId === race.id && r.status === "APPROVED");
   const pending = registrations.filter((r) => r.raceId === race.id && r.status === "PENDING");
   const raceResults = results.filter((r) => r.raceId === race.id);
+  const registeredIds = registrations
+    .filter((r) => r.raceId === race.id && r.status !== "REJECTED")
+    .map((r) => r.competitorId);
+  const eligible = competitors.filter(
+    (c) => c.status === "ACTIVE" && !registeredIds.includes(c.id),
+  );
 
   return (
     <AppShell
       title={race.name}
       subtitle={`${labelize(race.type)} race · ${approved.length}/${race.maxParticipants} confirmed`}
       actions={
-        canManage ? (
-          <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
-            Edit race
-          </Button>
-        ) : null
+        <div className="flex gap-2">
+          {race.status === "OPEN_FOR_REGISTRATION" ? (
+            <Button size="sm" onClick={() => setRegisterOpen(true)}>
+              <UserPlus className="size-4" /> Register competitor
+            </Button>
+          ) : null}
+          {canManage ? (
+            <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+              Edit race
+            </Button>
+          ) : null}
+        </div>
       }
     >
       <div className="space-y-6">
@@ -170,6 +200,53 @@ function RaceDetail() {
       </div>
 
       <RaceFormDialog open={editOpen} onOpenChange={setEditOpen} race={race} />
+
+      <Dialog open={registerOpen} onOpenChange={setRegisterOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Register competitor</DialogTitle>
+            <DialogDescription>
+              Pick an active competitor to enter {race.name}. The registration starts as pending
+              until an organizer approves it.
+            </DialogDescription>
+          </DialogHeader>
+          <Select value={pick} onValueChange={setPick}>
+            <SelectTrigger>
+              <SelectValue placeholder="Choose a competitor" />
+            </SelectTrigger>
+            <SelectContent>
+              {eligible.map((c) => (
+                <SelectItem key={c.id} value={String(c.id)}>
+                  {c.name} · {labelize(c.type)}
+                </SelectItem>
+              ))}
+              {eligible.length === 0 ? (
+                <SelectItem value="none" disabled>
+                  No eligible competitors
+                </SelectItem>
+              ) : null}
+            </SelectContent>
+          </Select>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRegisterOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (!pick || pick === "none") {
+                  toast.error("Pick a competitor first.");
+                  return;
+                }
+                registerCompetitor(race.id, Number(pick));
+                setPick("");
+                setRegisterOpen(false);
+              }}
+            >
+              Register
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 }
