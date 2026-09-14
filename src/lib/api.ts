@@ -161,6 +161,10 @@ export const api = {
     get: (id: number) => apiRequest(`/teams/${id}`),
     create: (body: unknown) => apiRequest("/teams", { method: "POST", body }),
     update: (id: number, body: unknown) => apiRequest(`/teams/${id}`, { method: "PUT", body }),
+    addCompetitor: (teamId: number, competitorId: number) =>
+      apiRequest(`/teams/${teamId}/competitors/${competitorId}`, { method: "POST" }),
+    removeCompetitor: (teamId: number, competitorId: number) =>
+      apiRequest(`/teams/${teamId}/competitors/${competitorId}`, { method: "DELETE" }),
   },
   races: {
     list: () => apiRequest(`/races${PAGE_QUERY}`),
