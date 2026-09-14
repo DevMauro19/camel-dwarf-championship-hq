@@ -111,6 +111,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         })
         .catch((error) => {
           toast.error(friendlyMessage(error));
+          // Roll back the optimistic change by re-syncing from the server.
+          void refresh();
           return false;
         });
     };
