@@ -247,16 +247,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       },
       saveRace: (input) => {
         persist(() => {
+          // The backend stores LocalDateTime: no milliseconds, no timezone suffix.
+          const local = (iso: string) => iso.replace(/(\.\d+)?(Z|[+-]\d{2}:?\d{2})?$/, "");
           const body = {
             name: input.name,
             description: input.description,
             type: input.type,
-            status: input.status,
             distanceMeters: input.distanceMeters,
             startLocation: input.startLocation,
             finishLocation: input.finishLocation,
-            scheduledAt: input.scheduledAt,
-            registrationDeadline: input.registrationDeadline,
+            scheduledAt: local(input.scheduledAt),
+            registrationDeadline: local(input.registrationDeadline),
             maximumParticipants: input.maxParticipants,
           };
           return input.id ? api.races.update(input.id, body) : api.races.create(body);
