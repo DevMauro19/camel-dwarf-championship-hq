@@ -34,6 +34,7 @@ interface StoreValue extends StoreState {
   removeMember: (teamId: number, competitorId: number) => void;
   saveRace: (input: Omit<Race, "id"> & { id?: number }) => void;
   setRaceStatus: (id: number, status: Race["status"]) => void;
+  registerCompetitor: (raceId: number, competitorId: number) => void;
   approveRegistration: (id: number) => void;
   rejectRegistration: (id: number, validationNotes: string) => void;
   saveResults: (raceId: number, rows: Omit<RaceResult, "id">[]) => void;
@@ -209,6 +210,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         });
       },
       addMember: (teamId, competitorId) => {
+        persist(() => api.teams.addCompetitor(teamId, competitorId));
         setState((prev) => ({
           ...prev,
           teams: prev.teams.map((t) =>
@@ -227,6 +229,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         });
       },
       removeMember: (teamId, competitorId) => {
+        persist(() => api.teams.removeCompetitor(teamId, competitorId));
         setState((prev) => ({
           ...prev,
           teams: prev.teams.map((t) =>
