@@ -84,11 +84,18 @@ function RaceDetail() {
       title={race.name}
       subtitle={`${labelize(race.type)} race · ${approved.length}/${race.maxParticipants} confirmed`}
       actions={
-        canManage ? (
-          <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
-            Edit race
-          </Button>
-        ) : null
+        <div className="flex gap-2">
+          {race.status === "OPEN_FOR_REGISTRATION" ? (
+            <Button size="sm" onClick={() => setRegisterOpen(true)}>
+              <UserPlus className="size-4" /> Register competitor
+            </Button>
+          ) : null}
+          {canManage ? (
+            <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+              Edit race
+            </Button>
+          ) : null}
+        </div>
       }
     >
       <div className="space-y-6">
@@ -193,6 +200,53 @@ function RaceDetail() {
       </div>
 
       <RaceFormDialog open={editOpen} onOpenChange={setEditOpen} race={race} />
+
+      <Dialog open={registerOpen} onOpenChange={setRegisterOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Register competitor</DialogTitle>
+            <DialogDescription>
+              Pick an active competitor to enter {race.name}. The registration starts as pending
+              until an organizer approves it.
+            </DialogDescription>
+          </DialogHeader>
+          <Select value={pick} onValueChange={setPick}>
+            <SelectTrigger>
+              <SelectValue placeholder="Choose a competitor" />
+            </SelectTrigger>
+            <SelectContent>
+              {eligible.map((c) => (
+                <SelectItem key={c.id} value={String(c.id)}>
+                  {c.name} · {labelize(c.type)}
+                </SelectItem>
+              ))}
+              {eligible.length === 0 ? (
+                <SelectItem value="none" disabled>
+                  No eligible competitors
+                </SelectItem>
+              ) : null}
+            </SelectContent>
+          </Select>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRegisterOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (!pick || pick === "none") {
+                  toast.error("Pick a competitor first.");
+                  return;
+                }
+                registerCompetitor(race.id, Number(pick));
+                setPick("");
+                setRegisterOpen(false);
+              }}
+            >
+              Register
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 }
