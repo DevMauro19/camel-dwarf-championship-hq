@@ -198,8 +198,9 @@ function RaceDetail() {
                       size="sm"
                       variant={t.status === "CANCELLED" ? "outline" : "default"}
                       onClick={() => {
-                        setRaceStatus(race.id, t.status);
-                        toast.success(`${race.name} → ${labelize(t.status)}`);
+                        void setRaceStatus(race.id, t.status).then((saved) => {
+                          if (saved) toast.success(`${race.name} → ${labelize(t.status)}`);
+                        });
                       }}
                     >
                       {t.label}

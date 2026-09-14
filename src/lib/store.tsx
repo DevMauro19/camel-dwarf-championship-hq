@@ -33,7 +33,7 @@ interface StoreValue extends StoreState {
   addMember: (teamId: number, competitorId: number) => Promise<boolean>;
   removeMember: (teamId: number, competitorId: number) => void;
   saveRace: (input: Omit<Race, "id"> & { id?: number }) => Promise<boolean>;
-  setRaceStatus: (id: number, status: Race["status"]) => void;
+  setRaceStatus: (id: number, status: Race["status"]) => Promise<boolean>;
   registerCompetitor: (raceId: number, competitorId: number) => Promise<boolean>;
   approveRegistration: (id: number) => void;
   rejectRegistration: (id: number, validationNotes: string) => void;
@@ -264,6 +264,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             name: input.name,
             description: input.description,
             type: input.type,
+            status: input.status,
             distanceMeters: input.distanceMeters,
             startLocation: input.startLocation,
             finishLocation: input.finishLocation,
@@ -291,9 +292,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         });
         return saved;
       },
-      setRaceStatus: (id, status) => {
+      setRaceStatus: async (id, status) => {
         const previous = state.races.find((r) => r.id === id)?.status;
-        persist(() => api.races.setStatus(id, status));
+        const saved = await persist(() => api.races.setStatus(id, status));
+        if (!saved) return;
+
         setState((prev) => ({
           ...prev,
           races: prev.races.map((r) => (r.id === id ? { ...r, status } : r)),
@@ -305,6 +308,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           ...(previous ? { previousValue: previous } : {}),
           newValue: status,
         });
+        return true;
       },
       registerCompetitor: async (raceId, competitorId) => {
         const saved = await persist(() => api.registrations.create({ raceId, competitorId }));
