@@ -252,7 +252,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         });
       },
       saveRace: (input) => {
-        persist(() => {
+        const saved = persist(() => {
           // The backend stores LocalDateTime: no milliseconds, no timezone suffix.
           const local = (iso: string) => iso.replace(/(\.\d+)?(Z|[+-]\d{2}:?\d{2})?$/, "");
           const body = {
