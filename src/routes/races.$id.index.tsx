@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
-import { ArrowLeft, CalendarClock, ClipboardCheck, Flag, MapPin, Ruler, Trophy } from "lucide-react";
+import { ArrowLeft, CalendarClock, ClipboardCheck, Flag, MapPin, Ruler, Trophy, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { EmptyState } from "@/components/Spinner";
@@ -8,6 +8,21 @@ import { RaceFormDialog } from "@/components/RaceFormDialog";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuth } from "@/lib/auth";
 import { useStore } from "@/lib/store";
 import { labelize, type RaceStatus } from "@/lib/types";
