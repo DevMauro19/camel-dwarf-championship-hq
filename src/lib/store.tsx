@@ -280,6 +280,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       },
       setRaceStatus: (id, status) => {
         const previous = state.races.find((r) => r.id === id)?.status;
+        persist(() => api.races.setStatus(id, status));
         setState((prev) => ({
           ...prev,
           races: prev.races.map((r) => (r.id === id ? { ...r, status } : r)),
