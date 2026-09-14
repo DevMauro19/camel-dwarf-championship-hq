@@ -93,8 +93,17 @@ export async function apiRequest<T>(
   if (!response.ok) {
     let message = `Request failed with ${response.status}`;
     try {
-      const payload = (await response.json()) as { message?: string };
+      const payload = (await response.json()) as {
+        message?: string;
+        fieldErrors?: Record<string, string>;
+      };
       if (payload?.message) message = payload.message;
+      if (payload?.fieldErrors) {
+        const details = Object.entries(payload.fieldErrors)
+          .map(([field, reason]) => `${field}: ${reason}`)
+          .join(" · ");
+        if (details) message = `${message} (${details})`;
+      }
     } catch {
       /* keep the default message */
     }
