@@ -55,8 +55,10 @@ const TRANSITIONS: { label: string; status: RaceStatus; from: RaceStatus[] }[] =
 function RaceDetail() {
   const { id } = useParams({ from: "/races/$id/" });
   const { canManage } = useAuth();
-  const { races, registrations, competitors, results, setRaceStatus } = useStore();
+  const { races, registrations, competitors, results, setRaceStatus, registerCompetitor } = useStore();
   const [editOpen, setEditOpen] = useState(false);
+  const [registerOpen, setRegisterOpen] = useState(false);
+  const [pick, setPick] = useState("");
   const race = races.find((r) => r.id === Number(id));
 
   if (!race) {
@@ -70,6 +72,12 @@ function RaceDetail() {
   const approved = registrations.filter((r) => r.raceId === race.id && r.status === "APPROVED");
   const pending = registrations.filter((r) => r.raceId === race.id && r.status === "PENDING");
   const raceResults = results.filter((r) => r.raceId === race.id);
+  const registeredIds = registrations
+    .filter((r) => r.raceId === race.id && r.status !== "REJECTED")
+    .map((r) => r.competitorId);
+  const eligible = competitors.filter(
+    (c) => c.status === "ACTIVE" && !registeredIds.includes(c.id),
+  );
 
   return (
     <AppShell
