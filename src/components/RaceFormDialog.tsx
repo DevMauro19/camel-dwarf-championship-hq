@@ -51,6 +51,12 @@ const schema = z.object({
 });
 
 const toInput = (iso: string) => (iso ? new Date(iso).toISOString().slice(0, 16) : "");
+/** datetime-local gives "YYYY-MM-DDTHH:mm"; the backend wants ISO local date-time with seconds. */
+const toServerDateTime = (value: string) => {
+  const base = value.includes("T") ? value : new Date(value).toISOString().slice(0, 16);
+  const noZone = base.replace(/(\.\d+)?(Z|[+-]\d{2}:?\d{2})?$/, "");
+  return noZone.length === 16 ? `${noZone}:00` : noZone;
+};
 
 const blank = {
   name: "",
@@ -112,10 +118,15 @@ export function RaceFormDialog({
       toast.error("The registration deadline must fall before the race start.");
       return;
     }
+    if (new Date(parsed.data.scheduledAt) <= new Date()) {
+      toast.error("The race date must be in the future.");
+      return;
+    }
     saveRace({
       ...parsed.data,
-      scheduledAt: new Date(parsed.data.scheduledAt).toISOString(),
-      registrationDeadline: new Date(parsed.data.registrationDeadline).toISOString(),
+      // The server expects local date-times without a timezone suffix.
+      scheduledAt: toServerDateTime(parsed.data.scheduledAt),
+      registrationDeadline: toServerDateTime(parsed.data.registrationDeadline),
       ...(race ? { id: race.id } : {}),
     });
     toast.success(race ? "Race updated." : "Race created.");
