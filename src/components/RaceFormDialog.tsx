@@ -103,7 +103,9 @@ export function RaceFormDialog({
     );
   }, [open, race]);
 
-  function submit(event: React.FormEvent) {
+  const [saving, setSaving] = useState(false);
+
+  async function submit(event: React.FormEvent) {
     event.preventDefault();
     const parsed = schema.safeParse({
       ...form,
