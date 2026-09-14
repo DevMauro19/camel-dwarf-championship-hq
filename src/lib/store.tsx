@@ -34,7 +34,7 @@ interface StoreValue extends StoreState {
   removeMember: (teamId: number, competitorId: number) => void;
   saveRace: (input: Omit<Race, "id"> & { id?: number }) => Promise<boolean>;
   setRaceStatus: (id: number, status: Race["status"]) => void;
-  registerCompetitor: (raceId: number, competitorId: number) => void;
+  registerCompetitor: (raceId: number, competitorId: number) => Promise<boolean>;
   approveRegistration: (id: number) => void;
   rejectRegistration: (id: number, validationNotes: string) => void;
   saveResults: (raceId: number, rows: Omit<RaceResult, "id">[]) => void;
@@ -306,8 +306,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           newValue: status,
         });
       },
-      registerCompetitor: (raceId, competitorId) => {
-        persist(() => api.registrations.create({ raceId, competitorId }));
+      registerCompetitor: async (raceId, competitorId) => {
+        const saved = await persist(() => api.registrations.create({ raceId, competitorId }));
+        if (!saved) return false;
+
         setState((prev) => {
           const exists = prev.registrations.some(
             (r) => r.raceId === raceId && r.competitorId === competitorId && r.status !== "REJECTED",
@@ -334,6 +336,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           newValue: "PENDING",
         });
         toast.success("Competitor registered for race.");
+        return true;
       },
       approveRegistration: (id) => {
         setState((prev) => ({

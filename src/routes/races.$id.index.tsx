@@ -69,7 +69,10 @@ function RaceDetail() {
     .filter((r) => r.raceId === race.id && r.status !== "REJECTED")
     .map((r) => r.competitorId);
   const eligible = competitors.filter(
-    (c) => c.status === "ACTIVE" && !registeredIds.includes(c.id),
+    (c) =>
+      c.status === "ACTIVE" &&
+      !registeredIds.includes(c.id) &&
+      approved.length + pending.length < race.maxParticipants,
   );
 
   return (
@@ -127,7 +130,7 @@ function RaceDetail() {
                 <div className="flex gap-2">
                   <Select value={pick} onValueChange={setPick}>
                     <SelectTrigger className="w-52">
-                      <SelectValue placeholder="Add a competitor" />
+                      <SelectValue placeholder="Add competitor" />
                     </SelectTrigger>
                     <SelectContent>
                       {eligible.map((competitor) => (
@@ -148,12 +151,13 @@ function RaceDetail() {
                         toast.error("Pick a competitor to add first.");
                         return;
                       }
-                      registerCompetitor(race.id, Number(pick));
-                      setPick("");
-                      toast.success("Competitor added to the race.");
+                      void registerCompetitor(race.id, Number(pick)).then((saved) => {
+                        if (!saved) return;
+                        setPick("");
+                      });
                     }}
                   >
-                    <Plus className="size-4" /> Add
+                    <Plus className="size-4" /> Add competitor
                   </Button>
                 </div>
               ) : null}
